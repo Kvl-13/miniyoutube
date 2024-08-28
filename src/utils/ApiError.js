@@ -13,6 +13,7 @@ class ApiError extends Error {
         this.success = false;
         this.errors = errors
 
+        // ------------- If get error see If condition video: 10------------
         if (statck) {
             this.stack = statck;
         } else {
