@@ -136,8 +136,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1
             }
         },
         {
@@ -210,7 +210,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findById(req.user?._id);
-    const isPasswordEqual = user.isPasswordCorrect(oldPassword);
+    const isPasswordEqual = await user.isPasswordCorrect(oldPassword);
 
     if (!isPasswordEqual) {
         throw new ApiError(401, "Invalid old password");
@@ -337,6 +337,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username } = req.params;
+    console.log(username);
 
     if (!username?.trim()) {
         throw new ApiError(400, "Username is missing");
@@ -366,11 +367,15 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                subscriberCount: $size("$subscribers"),
-                channelSubscribedToCount: $size("$subscribedTo"),
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
                 isSubscribed: {
                     $cond: {
-                        $if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
                         then: true,
                         else: false
                     }
@@ -384,16 +389,13 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 username: 1,
                 avatar: 1,
                 coverImage: 1,
-                subscriberCount: 1,
-                channelSubscribedToCount: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
                 isSubscribed: 1
             }
         }
     ]);
 
-    console.log(channel);
-
-    // Understand See this code
     if (!channel?.length) {
         throw new ApiError(404, "Channel does't exists");
     }
@@ -449,11 +451,13 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         }
     ]);
 
+    console.log(user[0].watchHistory);
+
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, user[0].watchHistory , "Watch history fetched successfully")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully")
+        )
 });
 
 export { registerUser, loginUser, logoutUser, refreshActionToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory }
