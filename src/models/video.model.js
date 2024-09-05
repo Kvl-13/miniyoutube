@@ -25,11 +25,10 @@ const videoSchema = new Schema({
     views: {
         type: Number,
         default: 0,
-        required: true,
     },
     isPublish: {
         type: Boolean,
-        required: true,
+        default: true,
     },
     owner:{
         type: Schema.Types.ObjectId,
